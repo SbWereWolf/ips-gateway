@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ips-message-handler": {
+      "commandName": "Project",
+      "commandLineArgs": ""
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "gates": [
+    {
+      "kind": "http",
+      "options": ""
+    },
+    {
+      "kind": "http",
+      "options": ""
+    },
+    {
+      "kind": "file",
+      "options": ""
+    },
+    {
+      "kind": "db",
+      "options": ""
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "gather-arguments-from": "input",
+  "values-set-of-gather-arguments-from": [
+    "startup",
+    "input"
+  ],
+  "cli-arguments-separator": ";",
+  "cli-argument-numbers": 2
+}

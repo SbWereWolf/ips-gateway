@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "concierge": {
+      "commandName": "Project",
+      "commandLineArgs": "file C:\\tmp"
+    }
+  }
+}
