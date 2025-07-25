@@ -8,6 +8,6 @@ namespace ReadingInboxLibrary
 {
     public interface IConstructingInboxReaders
     {
-        public IReadingInbox Make(string kind);
+        public IReadingInbox Make(string kind, string correlationId);
     }
 }

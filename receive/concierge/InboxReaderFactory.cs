@@ -2,11 +2,11 @@
 {
     public class InboxReaderFactory : IConstructingInboxReaders
     {
-        public IReadingInbox Make(string kind)
+        public IReadingInbox Make(string kind, string correlationId)
         {
             return archivist.
                 LoggingDecorator<IReadingInbox>.
-                Create(new DirectoryObserver());
+                Create(new DirectoryObserver(), correlationId);
         }
     }
 }

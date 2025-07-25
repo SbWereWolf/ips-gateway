@@ -14,11 +14,37 @@ namespace CommandLineInterface
         private const string CliArgumentsSeparator = "cli-arguments-separator";
         private const string CliArgumentsNumbers = "cli-argument-numbers";
 
-        private readonly string SettingsFilePathKey = "program-settings-example.json";
+        private readonly string SettingsFilePathKey = "settings-file-path-key";
+
+        public const string CorrelationIdKey = "correlationId=";
+        public string CorrelationId = string.Empty;
 
         public BaseProgram(string settingsPathKey)
         {
             SettingsFilePathKey = settingsPathKey;
+        }
+
+        public static string GetCorrelationId(string[] args)
+        {
+            var correlationId = String.Empty;
+
+            foreach (var arg in args)
+            {
+                var startPosition = arg.IndexOf(CorrelationIdKey);
+                if (startPosition == 0)
+                {
+                    correlationId = arg;
+
+                    break;
+                }
+            }
+
+            return correlationId;
+        }
+
+        public void SetCorrelationId(string correlationId)
+        {
+            CorrelationId = correlationId;
         }
 
         public IArgumentStorage ProcureArguments(
@@ -28,17 +54,22 @@ namespace CommandLineInterface
         {
             var settings = LoadProgramSettings();
 
-            var programArguments = storageFactory.MakeDummy();
-            var gatherArgumentsFrom = settings[GatherArgumentsFrom] ?? string.Empty;
+            var programArguments = 
+                storageFactory.MakeDummy(CorrelationId);
+
+            var gatherArgumentsFrom = 
+                settings[GatherArgumentsFrom] ?? string.Empty;
 
             if (gatherArgumentsFrom == FromStartup)
             {
-                programArguments = storageFactory.MakeReal(args);
+                programArguments = 
+                    storageFactory.MakeReal(args, CorrelationId);
             }
 
             if (gatherArgumentsFrom == FromInput)
             {
-                var cliArgumentsSeparator = settings[CliArgumentsSeparator];
+                var cliArgumentsSeparator = 
+                    settings[CliArgumentsSeparator];
                 var optionNumbers = settings[CliArgumentsNumbers];
                 var input = Console.ReadLine();
 
@@ -48,7 +79,8 @@ namespace CommandLineInterface
                     optionNumbers
                     );
 
-                programArguments = storageFactory.MakeReal(arguments);
+                programArguments = 
+                    storageFactory.MakeReal(arguments, CorrelationId);
             }
 
             return programArguments;

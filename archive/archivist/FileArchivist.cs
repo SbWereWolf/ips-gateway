@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +13,17 @@ namespace archivist
     /* base on https://markpelf.com/1072/logging-proxy-in-c/ */
     public class FileArchivist
     {
+        private string CorrelationId = string.Empty;
+        private string RunId = string.Empty;
+        private string ClassName = string.Empty;
+        private string MethodName = string.Empty;
+
         private Object LogLocker = new();
 
         protected const string SettingsKey =
             "integrated-logger-settings-file";
         private string? LogFilename = null;
-        
+
         private string ProcureLogFilename()
         {
             var secretConfig = new ConfigurationBuilder()
@@ -32,7 +38,10 @@ namespace archivist
             return config ?? string.Empty;
         }
 
-        private void MakeLogFilename(string runId)
+        private void MakeLogFilename(
+            string runId,
+            string? correlationId
+            )
         {
             if (LogFilename == null)
             {
@@ -48,8 +57,9 @@ namespace archivist
                 new StringBuilder().
                 AppendJoin(
                 '_',
-                new string[] {
+                new string?[] {
                     filename,
+                    correlationId,
                     DateTime.Now.Ticks.ToString(),
                     $"{runId}.log"
                 }
@@ -58,19 +68,29 @@ namespace archivist
             }
         }
 
-        public async void Before(
+        public void Initialize(
+            string? correlationId,
             string runId,
-            DateTime now,
-            object[]? args,
-            string classname,
+            string className,
             MethodInfo? methodInfo
             )
         {
-            MakeLogFilename(runId);
+            CorrelationId = correlationId ?? string.Empty;
+            RunId = runId;
+            ClassName = className;
+            MethodName = methodInfo?.Name ?? string.Empty;
 
+            MakeLogFilename(RunId, CorrelationId);
+
+        }
+
+        public async void Before(
+            DateTime now,
+            object?[]? args)
+        {
             args ??= Array.Empty<object>();
 
-            var arguments = new List<string>();
+            var arguments = new List<string?>();
             foreach (var obj in args)
             {
                 string? serialized = serializeWithJson(obj);
@@ -82,13 +102,15 @@ namespace archivist
             var message = new StringBuilder().
                 AppendJoin(
                 ' ',
-                new string[] {
-                    DateTime.Now.Ticks.ToString(),
-                    runId,
+                new string?[] {
+                    now.Ticks.ToString(),
+                    CorrelationId,
+                    RunId,
                     "RUN",
-                    classname,
+                    ClassName,
                     "->",
-                    $"{methodInfo?.Name}({values})"
+                    MethodName,
+                    $"input ({values})",
                 }
                 ).
                 ToString();
@@ -108,23 +130,24 @@ namespace archivist
         }
 
         public async void After(
-            string runId, 
-            DateTime now, 
+            DateTime now,
             object? result
             )
         {
-            MakeLogFilename(runId);
-
             var jsonResult = serializeWithJson(result);
 
             var message = new StringBuilder().
                 AppendJoin(
                 ' ',
-                new string[] {
+                new string?[] {
                     now.Ticks.ToString(),
-                    runId,
+                    CorrelationId,
+                    RunId,
                     "END",
-                    jsonResult
+                    ClassName,
+                    "->",
+                    MethodName,
+                    $"output {jsonResult}",
                 }
                 ).
                 ToString();
@@ -133,21 +156,21 @@ namespace archivist
         }
 
         public async void Exception(
-            string runId, 
-            DateTime now, 
-            Exception exception
-            )
+            DateTime now,
+            Exception exception)
         {
-            MakeLogFilename(runId);
-
             var message = new StringBuilder().
                 AppendJoin(
                 ' ',
-                new string[] {
+                new string?[] {
                     now.Ticks.ToString(),
-                    runId,
+                    CorrelationId,
+                    RunId,
                     "EXC",
-                    exception.Message
+                    ClassName,
+                    "->",
+                    MethodName,
+                    exception.Message,
                 }
                 ).
                 ToString();
@@ -159,10 +182,13 @@ namespace archivist
         {
             lock (LogLocker)
             {
-                File.AppendAllText(
-                    LogFilename,
-                    logMessage + Environment.NewLine
-                    );
+                if (!string.IsNullOrWhiteSpace(LogFilename))
+                {
+                    File.AppendAllText(
+                        LogFilename,
+                        logMessage + Environment.NewLine
+                        );
+                }
             }
 
             return Task.CompletedTask;

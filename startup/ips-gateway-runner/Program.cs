@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using ReadingInboxLibrary;
+using CommandLineInterface;
 
 namespace IpsGatewayRunner
 {
@@ -20,11 +21,12 @@ namespace IpsGatewayRunner
             var specs = LoadGatesSpecification(fileWithGates);
 
             var factory = new ReadingInboxLibrary.InboxReaderFactory();
+            var correlationId = BaseProgram.GetCorrelationId(args);
 
             var allReaders = new List<IReadingInbox>();
             foreach (var gate in specs)
             {
-                var reader = factory.Make(gate.Medium);
+                var reader = factory.Make(gate.Medium, correlationId);
                 reader.GetReadyForReading(gate.Options);
 
                 allReaders.Add(reader);

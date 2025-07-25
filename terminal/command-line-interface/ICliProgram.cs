@@ -16,5 +16,6 @@ namespace CommandLineInterface
             string cliArgumentsSeparator,
             string optionNumbers
             );
+        public void SetCorrelationId(string correlationId);
     }
 }

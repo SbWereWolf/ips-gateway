@@ -14,9 +14,13 @@ namespace IpsMessageParser.CLI
 
         public static void Main(string[] args)
         {
+            var correlationId = GetCorrelationId(args);
+
             var app = archivist.
                 LoggingDecorator<ICliProgram>.
-                Create(new Program(SettingsKey));
+                Create(new Program(SettingsKey), correlationId);
+
+            app.SetCorrelationId(correlationId);
 
             var arguments = app.ProcureArguments(
                 args,

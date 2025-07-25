@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\receive\concierge\concierge.csproj" />
+    <ProjectReference Include="..\..\terminal\command-line-interface\command-line-interface.csproj" />
   </ItemGroup>
 
   <ItemGroup>

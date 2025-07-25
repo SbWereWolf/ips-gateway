@@ -8,27 +8,33 @@ namespace archivist
     {
         private readonly FileArchivist Archivist = new();
 
-        private T _decorated;
+        private T? _decorated;
+        private string? _correlationId;
 
         protected override object? Invoke(
-            MethodInfo? targetMethod, 
+            MethodInfo? targetMethod,
             object?[]? args
             )
         {
-            var runId = Guid.NewGuid().ToString();
+            if (targetMethod?.Name != "ToString")
+            {
+                var runId = $"runId={Guid.NewGuid()}";
+                var classname = _decorated?.GetType().FullName ?? "";
+
+                Archivist.Initialize(
+                    _correlationId,
+                    runId,
+                    classname,
+                    targetMethod
+                    );
+            }
 
             try
             {
                 if (targetMethod?.Name != "ToString")
                 {
-                    var classname = _decorated?.GetType().FullName ?? "";
-                    Archivist.Before(
-                        runId,
-                        DateTime.Now, 
-                        args, 
-                        classname, 
-                        targetMethod
-                        );
+
+                    Archivist.Before(DateTime.Now, args);
                 }
 
                 var result = targetMethod?.Invoke(_decorated, args);
@@ -36,7 +42,7 @@ namespace archivist
 
                 if (targetMethod?.Name != "ToString")
                 {
-                    Archivist.After(runId, DateTime.Now, result);
+                    Archivist.After(DateTime.Now, result);
                 }
 
                 return result;
@@ -47,27 +53,30 @@ namespace archivist
 
                 if (targetMethod?.Name != "ToString")
                 {
-                    Archivist.Exception(
-                        runId, 
-                        DateTime.Now, 
-                        realException
-                        );
+                    Archivist.Exception(DateTime.Now, realException);
                 }
 
                 throw realException;
             }
         }
 
-        public static T Create(T decorated)
+        public static T Create(T decorated, string? correlationId)
         {
-            object proxy = Create<T, LoggingDecorator<T>>();
-            ((LoggingDecorator<T>)proxy).SetParameters(decorated);
+            object proxy = Create<T, LoggingDecorator<T>>() ??
+                throw new ArgumentNullException(
+                    "Fail on create proxy for "
+                    + (decorated?.GetType().FullName ?? "")
+                    );
+            ((LoggingDecorator<T>)proxy)
+                .SetParameters(decorated, correlationId);
 
             return (T)proxy;
         }
 
-        private void SetParameters(T decorated)
+        private void SetParameters(T decorated, string? correlationId)
         {
+            _correlationId = correlationId;
+
             if (decorated == null)
             {
                 throw new ArgumentNullException(nameof(decorated));

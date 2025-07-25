@@ -12,9 +12,13 @@ namespace Concierge.CLI
 
         public static void Main(string[] args)
         {
+            var correlationId = GetCorrelationId(args);
+
             var app = archivist.
                 LoggingDecorator<ICliProgram>.
-                Create(new Program(SettingsKey));
+                Create(new Program(SettingsKey), correlationId);
+
+            app.SetCorrelationId(correlationId);
 
             var arguments = app.ProcureArguments(
                 args, 
@@ -48,9 +52,14 @@ namespace Concierge.CLI
             return new archivist.ArrayStringPrinter(messageList.ToArray()).ToString();
         }
 
-        public static IEnumerable<string> ReadMessages(string medium, string options)
+        public IEnumerable<string> ReadMessages(
+            string medium, 
+            string options
+            )
         {
-            var reader = new ReadingInboxLibrary.InboxReaderFactory().Make(medium);
+            var reader = new ReadingInboxLibrary
+                .InboxReaderFactory()
+                .Make(medium, CorrelationId);
             reader.GetReadyForReading(options);
 
             foreach (var body in reader.LetReadTheMessages())
