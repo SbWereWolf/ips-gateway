@@ -1,12 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace archivist
 {
@@ -14,7 +9,7 @@ namespace archivist
     public class FileArchivist
     {
         private string CorrelationId = string.Empty;
-        private string RunId = string.Empty;
+        private string InvokeId = string.Empty;
         private string ClassName = string.Empty;
         private string MethodName = string.Empty;
 
@@ -24,33 +19,40 @@ namespace archivist
             "integrated-logger-settings-file";
         private string? LogFilename = null;
 
-        private string ProcureLogFilename()
+        public bool WasInitialized { get; private set; }
+
+        public FileArchivist()
         {
-            var secretConfig = new ConfigurationBuilder()
-                .AddUserSecrets<FileArchivist>()
-                .Build();
-            var fileWithSettings = secretConfig[SettingsKey] ?? "";
-
-            var config = File.ReadAllText(fileWithSettings);
-            config = config.Trim(Environment.NewLine.ToArray<char>());
-
-
-            return config ?? string.Empty;
+            WasInitialized = false;
         }
 
-        private void MakeLogFilename(
-            string runId,
-            string? correlationId
-            )
+        private static string ProcureLogFilename
+        {
+            get
+            {
+                var secretConfig = new ConfigurationBuilder()
+                    .AddUserSecrets<FileArchivist>()
+                    .Build();
+                var fileWithSettings = secretConfig[SettingsKey] ?? "";
+
+                var config = File.ReadAllText(fileWithSettings);
+                config = config.Trim(Environment.NewLine.ToArray<char>());
+
+
+                return config ?? string.Empty;
+            }
+        }
+
+        private void MakeLogFilename()
         {
             if (LogFilename == null)
             {
-                var filename = ProcureLogFilename();
+                var filename = ProcureLogFilename;
 
                 var isFileDefined = !string.IsNullOrEmpty(filename);
                 if (!isFileDefined)
                 {
-                    throw new Exception($"Log filename is not defined");
+                    throw new Exception("Log filename is not defined");
                 }
 
                 LogFilename =
@@ -59,9 +61,9 @@ namespace archivist
                 '_',
                 new string?[] {
                     filename,
-                    correlationId,
+                    CorrelationId,
                     DateTime.Now.Ticks.ToString(),
-                    $"{runId}.log"
+                    $"{Guid.NewGuid()}.log"
                 }
                 ).
                 ToString();
@@ -70,18 +72,23 @@ namespace archivist
 
         public void Initialize(
             string? correlationId,
-            string runId,
-            string className,
-            MethodInfo? methodInfo
+            object? classExemplar
             )
         {
             CorrelationId = correlationId ?? string.Empty;
-            RunId = runId;
-            ClassName = className;
+            ClassName = classExemplar?.GetType().FullName ?? "";
+
+            MakeLogFilename();
+
+            WasInitialized = true;
+        }
+
+        public void GetReady(
+            MethodInfo? methodInfo
+            )
+        {
+            InvokeId = $"invokeId={Guid.NewGuid()}";
             MethodName = methodInfo?.Name ?? string.Empty;
-
-            MakeLogFilename(RunId, CorrelationId);
-
         }
 
         public async void Before(
@@ -93,7 +100,7 @@ namespace archivist
             var arguments = new List<string?>();
             foreach (var obj in args)
             {
-                string? serialized = serializeWithJson(obj);
+                string serialized = SerializeWithJson(obj);
                 arguments.Add(serialized);
             }
             var values = new StringBuilder().
@@ -105,7 +112,7 @@ namespace archivist
                 new string?[] {
                     now.Ticks.ToString(),
                     CorrelationId,
-                    RunId,
+                    InvokeId,
                     "RUN",
                     ClassName,
                     "->",
@@ -118,15 +125,15 @@ namespace archivist
             await WriteLogToFile(message);
         }
 
-        private static string? serializeWithJson(object? obj)
+        private static string SerializeWithJson(object? obj)
         {
-            var serilized = JsonConvert.SerializeObject(obj);
-            if (serilized == "{}")
+            var serialized = JsonConvert.SerializeObject(obj);
+            if (serialized == "{}")
             {
-                serilized = obj?.ToString();
+                serialized = obj?.ToString();
             }
 
-            return serilized ?? "null";
+            return serialized ?? "non-serializable-value";
         }
 
         public async void After(
@@ -134,7 +141,7 @@ namespace archivist
             object? result
             )
         {
-            var jsonResult = serializeWithJson(result);
+            var jsonResult = SerializeWithJson(result);
 
             var message = new StringBuilder().
                 AppendJoin(
@@ -142,7 +149,7 @@ namespace archivist
                 new string?[] {
                     now.Ticks.ToString(),
                     CorrelationId,
-                    RunId,
+                    InvokeId,
                     "END",
                     ClassName,
                     "->",
@@ -165,7 +172,7 @@ namespace archivist
                 new string?[] {
                     now.Ticks.ToString(),
                     CorrelationId,
-                    RunId,
+                    InvokeId,
                     "EXC",
                     ClassName,
                     "->",

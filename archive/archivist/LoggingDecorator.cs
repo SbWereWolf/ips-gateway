@@ -16,48 +16,44 @@ namespace archivist
             object?[]? args
             )
         {
-            if (targetMethod?.Name != "ToString")
+            var shouldLogging = targetMethod?.Name != "ToString";
+            if (shouldLogging && !Archivist.WasInitialized)
             {
-                var runId = $"runId={Guid.NewGuid()}";
-                var classname = _decorated?.GetType().FullName ?? "";
-
-                Archivist.Initialize(
-                    _correlationId,
-                    runId,
-                    classname,
-                    targetMethod
-                    );
+                Archivist.Initialize(_correlationId, _decorated);
+            }
+            if (shouldLogging)
+            {
+                Archivist.GetReady(targetMethod);
             }
 
+            if (shouldLogging)
+            {
+                Archivist.Before(DateTime.Now, args);
+            }
+
+            object? result;
             try
             {
-                if (targetMethod?.Name != "ToString")
-                {
-
-                    Archivist.Before(DateTime.Now, args);
-                }
-
-                var result = targetMethod?.Invoke(_decorated, args);
-
-
-                if (targetMethod?.Name != "ToString")
-                {
-                    Archivist.After(DateTime.Now, result);
-                }
-
-                return result;
+                result = targetMethod?.Invoke(_decorated, args);
             }
             catch (Exception ex) when (ex is TargetInvocationException)
             {
                 var realException = ex.InnerException ?? ex;
 
-                if (targetMethod?.Name != "ToString")
+                if (shouldLogging)
                 {
                     Archivist.Exception(DateTime.Now, realException);
                 }
 
                 throw realException;
             }
+
+            if (shouldLogging)
+            {
+                Archivist.After(DateTime.Now, result);
+            }
+
+            return result;
         }
 
         public static T Create(T decorated, string? correlationId)
@@ -75,13 +71,15 @@ namespace archivist
 
         private void SetParameters(T decorated, string? correlationId)
         {
-            _correlationId = correlationId;
-
             if (decorated == null)
             {
                 throw new ArgumentNullException(nameof(decorated));
             }
+
             _decorated = decorated;
+            _correlationId = correlationId;
+
+            Archivist.Initialize(_correlationId, _decorated);
         }
     }
 }
