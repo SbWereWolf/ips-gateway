@@ -1,4 +1,5 @@
-﻿using CommandLineInterface;
+﻿using archivist;
+using CommandLineInterface;
 using PayloadProcessor;
 
 namespace PayloadProcessor.CLI
@@ -8,27 +9,31 @@ namespace PayloadProcessor.CLI
 
         private const string SettingsKey = "payload-processor-settings-file";
 
-        public Program(string settingsPathKey) : base(settingsPathKey)
+        public Program(string settingsPathKey, string correlationId)
+            : base(settingsPathKey, correlationId)
         {
         }
 
+        [Log]
         public static void Main(string[] args)
         {
-            var correlationId = GetCorrelationId(args);
+            var correlationId = ExtractCorrelationId(args);
 
             var app = archivist.
                 LoggingDecorator<ICliProgram>.
-                Create(new Program(SettingsKey), correlationId);
-
-            app.SetCorrelationId(correlationId);
+                Create(
+                new Program(SettingsKey, correlationId), 
+                correlationId
+                );
 
             var arguments = app.ProcureArguments(
                 args,
-                new ArgumentStorageFactory()
+                new ArgumentStorageFactory(correlationId)
                 );
             app.Run(arguments);
         }
 
+        [Log]
         public override string Run(IArgumentStorage extractor)
         {
             var jsonData = Console.ReadLine();
@@ -40,9 +45,10 @@ namespace PayloadProcessor.CLI
             return result;
         }
 
-        private static string HandlePayload(string jsonData)
+        [Log]
+        private string HandlePayload(string jsonData)
         {
-            var processor = new Processor();
+            var processor = new Processor(CorrelationId);
             var jsonResult = processor.HandlePayload(jsonData);
 
             return jsonResult;

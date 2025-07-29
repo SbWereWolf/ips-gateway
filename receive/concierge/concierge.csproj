@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.150" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\archive\archivist\archivist.csproj" />
   </ItemGroup>
 

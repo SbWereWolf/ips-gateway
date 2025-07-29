@@ -1,13 +1,20 @@
-﻿namespace CommandLineInterface
+﻿using archivist;
+
+namespace CommandLineInterface
 {
     public class ArgumentStorage : IArgumentStorage
     {
         private readonly Picker Picker;
-        public ArgumentStorage(string[]? args)
+
+        private string CorrelationId;
+
+        public ArgumentStorage(string[]? args, string correlationId)
         {
             Picker = new Picker(args);
+            CorrelationId = correlationId;
         }
 
+        [Log]
         public string Extract(
             int argumentIndex,
             string missingArgumentMessage
@@ -27,6 +34,11 @@
             }
 
             return argumentValue;
+        }
+
+        public string GetCorrelationId()
+        {
+            return CorrelationId;
         }
 
         public override string ToString()

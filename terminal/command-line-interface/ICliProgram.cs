@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace CommandLineInterface
 {
-    public interface ICliProgram
+    public interface ICliProgram : ILogable
     {
         public IArgumentStorage ProcureArguments(
     string[] args,
@@ -16,6 +16,5 @@ namespace CommandLineInterface
             string cliArgumentsSeparator,
             string optionNumbers
             );
-        public void SetCorrelationId(string correlationId);
     }
 }

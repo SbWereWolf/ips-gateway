@@ -21,7 +21,7 @@ namespace IpsGatewayRunner
             var specs = LoadGatesSpecification(fileWithGates);
 
             var factory = new ReadingInboxLibrary.InboxReaderFactory();
-            var correlationId = BaseProgram.GetCorrelationId(args);
+            var correlationId = BaseProgram.ExtractCorrelationId(args);
 
             var allReaders = new List<IReadingInbox>();
             foreach (var gate in specs)

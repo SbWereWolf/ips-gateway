@@ -1,6 +1,8 @@
-﻿namespace CommandLineInterface
+﻿using archivist;
+
+namespace CommandLineInterface
 {
-    public interface IArgumentStorage
+    public interface IArgumentStorage : ILogable
     {
         public string Extract(
             int argumentIndex,

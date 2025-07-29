@@ -1,11 +1,23 @@
-﻿using Newtonsoft.Json;
-using System.Reflection.Metadata;
-using System.Xml;
+﻿using archivist;
+using Newtonsoft.Json;
 
 namespace PayloadProcessor
 {
-    public class Processor
+    public class Processor : ILogable
     {
+        public Processor(string correlationId)
+        {
+            CorrelationId = correlationId;
+        }
+
+        public string CorrelationId { get; }
+
+        public string GetCorrelationId()
+        {
+            return CorrelationId;
+        }
+
+        [Log]
         public string HandlePayload(string payload)
         {
             var doc = JsonConvert.DeserializeXmlNode(payload);

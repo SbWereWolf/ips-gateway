@@ -5,6 +5,7 @@ namespace CommandLineInterface
     public class Picker
     {
         private readonly string[] Args;
+
         public Picker(string[]? args)
         {
             Args = args ?? Array.Empty<string>();

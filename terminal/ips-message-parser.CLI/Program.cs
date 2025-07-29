@@ -1,4 +1,5 @@
-﻿using CommandLineInterface;
+﻿using archivist;
+using CommandLineInterface;
 using IpsMessageParser;
 
 namespace IpsMessageParser.CLI
@@ -8,27 +9,31 @@ namespace IpsMessageParser.CLI
 
         private const string SettingsKey = "ips-message-parser-settings-file";
 
-        public Program(string settingsPathKey) : base(settingsPathKey)
+        public Program(string settingsPathKey, string correlationId)
+            : base(settingsPathKey, correlationId)
         {
         }
 
+        [Log]
         public static void Main(string[] args)
         {
-            var correlationId = GetCorrelationId(args);
+            var correlationId = ExtractCorrelationId(args);
 
             var app = archivist.
                 LoggingDecorator<ICliProgram>.
-                Create(new Program(SettingsKey), correlationId);
-
-            app.SetCorrelationId(correlationId);
+                Create(
+                new Program(SettingsKey, correlationId),
+                correlationId
+                );
 
             var arguments = app.ProcureArguments(
                 args,
-                new ArgumentStorageFactory()
+                new ArgumentStorageFactory(correlationId)
                 );
             app.Run(arguments);
         }
 
+        [Log]
         public override string Run(IArgumentStorage arguments)
         {
             var xmlMessage = Console.ReadLine();
@@ -40,9 +45,10 @@ namespace IpsMessageParser.CLI
             return jsonText;
         }
 
-        private static string ParseIpsMessage(string xmlMessage)
+        [Log]
+        private string ParseIpsMessage(string xmlMessage)
         {
-            var parser = new Parser(xmlMessage);
+            var parser = new Parser(xmlMessage, CorrelationId);
             var jsonText = parser.Run();
 
             return jsonText;

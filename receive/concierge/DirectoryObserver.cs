@@ -1,19 +1,26 @@
-﻿using ReadingInboxLibrary;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
+﻿using archivist;
 
 namespace ReadingInboxLibrary
 {
-    public class DirectoryObserver : IReadingInbox
+    public class DirectoryObserver : IReadingInbox, ILogable
     {
         string BodySeparator = $"{Environment.NewLine}{Environment.NewLine}";
         private const char OptionValueSeparator = ';';
-        string Path = string.Empty; 
+        string Path = string.Empty;
 
+        private string CorrelationId;
+
+        public DirectoryObserver(string correlationId)
+        {
+            CorrelationId = correlationId;
+        }
+
+        public string GetCorrelationId()
+        {
+            return CorrelationId;
+        }
+
+        [Log]
         public bool GetReadyForReading(string options)
         {
             Path =  options.TrimEnd(OptionValueSeparator);
@@ -27,6 +34,7 @@ namespace ReadingInboxLibrary
             return true;
         }
 
+        [Log]
         public IEnumerable<string> LetReadTheMessages()
         {
             var files = Directory.GetFiles(Path,"*.http");

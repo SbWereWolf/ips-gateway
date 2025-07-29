@@ -10,27 +10,31 @@ namespace Concierge.CLI
 
         protected const string SettingsKey = "concierge-settings-file";
 
+        [Log]
         public static void Main(string[] args)
         {
-            var correlationId = GetCorrelationId(args);
+            var correlationId = ExtractCorrelationId(args);
 
             var app = archivist.
                 LoggingDecorator<ICliProgram>.
-                Create(new Program(SettingsKey), correlationId);
-
-            app.SetCorrelationId(correlationId);
+                Create(
+                new Program(SettingsKey, correlationId),
+                correlationId
+                );
 
             var arguments = app.ProcureArguments(
-                args, 
-                new ArgumentStorageFactory()
+                args,
+                new ArgumentStorageFactory(correlationId)
                 );
             app.Run(arguments);
         }
 
-        public Program(string settingsPathKey) : base(settingsPathKey)
+        public Program(string settingsPathKey, string correlationId)
+            : base(settingsPathKey, correlationId)
         {
         }
 
+        [Log]
         public override string Run(IArgumentStorage arguments)
         {
             var medium = arguments.Extract(
@@ -52,8 +56,9 @@ namespace Concierge.CLI
             return new archivist.ArrayStringPrinter(messageList.ToArray()).ToString();
         }
 
+        [Log]
         public IEnumerable<string> ReadMessages(
-            string medium, 
+            string medium,
             string options
             )
         {

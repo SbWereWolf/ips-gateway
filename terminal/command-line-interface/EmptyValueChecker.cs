@@ -1,4 +1,6 @@
-﻿namespace CommandLineInterface
+﻿using archivist;
+
+namespace CommandLineInterface
 {
     public class EmptyValueChecker
 

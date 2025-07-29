@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using archivist;
+using Microsoft.Extensions.Configuration;
 
 namespace CommandLineInterface
 {
-    public abstract class BaseProgram : ICliProgram
+    public abstract class BaseProgram : ICliProgram, ILogable
     {
         private const string GatherArgumentsFrom = "gather-arguments-from";
         private const string FromStartup = "startup";
@@ -19,12 +20,14 @@ namespace CommandLineInterface
         public const string CorrelationIdKey = "correlationId=";
         public string CorrelationId = string.Empty;
 
-        public BaseProgram(string settingsPathKey)
+        public BaseProgram(string settingsPathKey, string correlationId)
         {
             SettingsFilePathKey = settingsPathKey;
+            CorrelationId = correlationId;
         }
 
-        public static string GetCorrelationId(string[] args)
+        [Log]
+        public static string ExtractCorrelationId(string[] args)
         {
             var correlationId = String.Empty;
 
@@ -42,11 +45,13 @@ namespace CommandLineInterface
             return correlationId;
         }
 
-        public void SetCorrelationId(string correlationId)
+        public string GetCorrelationId()
         {
-            CorrelationId = correlationId;
+            return CorrelationId;
         }
 
+
+        [Log]
         public IArgumentStorage ProcureArguments(
             string[] args,
             ArgumentStorageFactory storageFactory
@@ -54,21 +59,21 @@ namespace CommandLineInterface
         {
             var settings = LoadProgramSettings();
 
-            var programArguments = 
-                storageFactory.MakeDummy(CorrelationId);
+            var programArguments =
+                storageFactory.MakeDummy();
 
-            var gatherArgumentsFrom = 
+            var gatherArgumentsFrom =
                 settings[GatherArgumentsFrom] ?? string.Empty;
 
             if (gatherArgumentsFrom == FromStartup)
             {
-                programArguments = 
-                    storageFactory.MakeReal(args, CorrelationId);
+                programArguments =
+                    storageFactory.MakeReal(args);
             }
 
             if (gatherArgumentsFrom == FromInput)
             {
-                var cliArgumentsSeparator = 
+                var cliArgumentsSeparator =
                     settings[CliArgumentsSeparator];
                 var optionNumbers = settings[CliArgumentsNumbers];
                 var input = Console.ReadLine();
@@ -79,15 +84,17 @@ namespace CommandLineInterface
                     optionNumbers
                     );
 
-                programArguments = 
-                    storageFactory.MakeReal(arguments, CorrelationId);
+                programArguments =
+                    storageFactory.MakeReal(arguments);
             }
 
             return programArguments;
         }
 
+        [Log]
         public abstract string Run(IArgumentStorage arguments);
 
+        [Log]
         public IConfigurationRoot LoadProgramSettings()
         {
             var secretConfig = new ConfigurationBuilder()
@@ -106,6 +113,7 @@ namespace CommandLineInterface
             return config;
         }
 
+        [Log]
         public string[]? GatherArgumentsFromInput(
             string? input,
             string cliArgumentsSeparator,

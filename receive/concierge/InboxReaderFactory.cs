@@ -6,7 +6,7 @@
         {
             return archivist.
                 LoggingDecorator<IReadingInbox>.
-                Create(new DirectoryObserver(), correlationId);
+                Create(new DirectoryObserver(correlationId), correlationId);
         }
     }
 }
