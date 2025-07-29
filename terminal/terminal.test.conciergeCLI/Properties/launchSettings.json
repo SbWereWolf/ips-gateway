@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "terminal.test.conciergeCLI": {
+      "commandName": "Project"
+    }
+  }
+}
