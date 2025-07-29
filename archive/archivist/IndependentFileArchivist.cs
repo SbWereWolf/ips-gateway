@@ -31,7 +31,7 @@ namespace archivist
             get
             {
                 var secretConfig = new ConfigurationBuilder()
-                    .AddUserSecrets<FileArchivist>()
+                    .AddUserSecrets<IndependentFileArchivist>()
                     .Build();
                 var fileWithSettings = secretConfig[SettingsKey] ?? "";
 

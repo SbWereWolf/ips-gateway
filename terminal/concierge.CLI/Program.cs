@@ -15,12 +15,7 @@ namespace Concierge.CLI
         {
             var correlationId = ExtractCorrelationId(args);
 
-            var app = archivist.
-                LoggingDecorator<ICliProgram>.
-                Create(
-                new Program(SettingsKey, correlationId),
-                correlationId
-                );
+            var app = new Program(SettingsKey, correlationId);
 
             var arguments = app.ProcureArguments(
                 args,

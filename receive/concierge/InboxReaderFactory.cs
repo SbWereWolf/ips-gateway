@@ -4,9 +4,7 @@
     {
         public IReadingInbox Make(string kind, string correlationId)
         {
-            return archivist.
-                LoggingDecorator<IReadingInbox>.
-                Create(new DirectoryObserver(correlationId), correlationId);
+            return new DirectoryObserver(correlationId);
         }
     }
 }

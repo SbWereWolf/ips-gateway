@@ -21,15 +21,10 @@ namespace CommandLineInterface
         [Log]
         public IArgumentStorage MakeDummy()
         {
-            var storage = archivist.
-                LoggingDecorator<IArgumentStorage>.
-                Create(
-                    new ArgumentStorage(
+            var storage = new ArgumentStorage(
                         Array.Empty<string>(),
                         CorrelationId
-                        ),
-                    CorrelationId
-                    );
+                        );
 
             return storage;
         }
@@ -37,12 +32,7 @@ namespace CommandLineInterface
         [Log]
         public IArgumentStorage MakeReal(string[]? args)
         {
-            var storage = archivist.
-                LoggingDecorator<IArgumentStorage>.
-                Create(
-                new ArgumentStorage(args, CorrelationId),
-                CorrelationId
-                );
+            var storage = new ArgumentStorage(args, CorrelationId);
 
             return storage;
         }
